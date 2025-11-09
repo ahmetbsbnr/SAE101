@@ -1,6 +1,6 @@
 # SAE1.01 : Jeu de Confrontation (2025-2026)
 
-Projet de SAE1.01 en langage C. C'est une application console avec trois mini-jeux.
+Projet de SAE1.01 en langage C.
 
 ## Auteurs
 
