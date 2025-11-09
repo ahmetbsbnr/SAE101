@@ -33,3 +33,9 @@ gcc -o jeu_sae101 JCONFRONTATION.c
 ```bash
 ./jeu_sae101
 ```
+
+## Licence
+
+© 2025-2026 Ahmet BASBUNAR, Ava (Nicolas) OURY, Léane SCHMITTAG. Tous droits réservés.
+
+Ce projet est un travail académique réalisé dans le cadre de la SAE1.01. Toute reproduction, distribution ou modification sans autorisation explicite des auteurs est strictement interdite.
