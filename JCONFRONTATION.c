@@ -119,7 +119,7 @@ static void afficher_moyennes(const Stats *j1, const Stats *j2, const Stats *j3)
 /*melangeur de voyelles*/
 // methode de Fisher-Yates
 void generer_code_voyelles(char *code) {
-    const int n = 5; // nombre de voyelles possibles
+    const int n = 6; // nombre de voyelles possibles
     char voyelles_table[5];
 
     // Copier les voyelles possibles dans un tableau
