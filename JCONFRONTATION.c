@@ -290,17 +290,16 @@ int jouer_suite_mystere(void) {
 /*======================================*/
 
 int jouer_mastermind(void) {
-
-    const char *voyelles = MM_VOYELLES;
+    const char *voyelles = MM_VOYELLES; // "AEIOUY"
     char secret[MM_TAILLE_CODE + 1];
     int i;
 
-    // Générer un code de 4 voyelles distinctes
-    int util[5] = {0, 0, 0, 0, 0};
+    // Générer un code de 4 voyelles distinctes parmi 6
+    int util[6] = {0,0,0,0,0,0};    
     for (i = 0; i < MM_TAILLE_CODE; ++i) {
         int idx;
         do {
-            idx = rand() % 5;
+            idx = rand() % 6;       
         } while (util[idx]);
         util[idx] = 1;
         secret[i] = voyelles[idx];
@@ -310,6 +309,16 @@ int jouer_mastermind(void) {
     printf("\n--- Mastermind ---\n");
     printf("Devine un code de %d voyelles parmi {%s}\n", MM_TAILLE_CODE, voyelles);
     printf("Tu as %d essais.\n", MM_MAX_ESSAIS);
+    printf("Les voyelles ne se répètent pas.\n");
+
+
+
+    //test
+    printf("[DEBUG] Code secret : %s\n", secret);
+
+
+
+
 
     for (int essai = 1; essai <= MM_MAX_ESSAIS; ++essai) {
         char proposition[64];
@@ -317,63 +326,65 @@ int jouer_mastermind(void) {
         scanf("%63s", proposition);
         int ch; while ((ch = getchar()) != '\n' && ch != EOF) {}
 
-        // Vérification de la longueur
+        // Vérification de la longueur du saisie utilisateur
         if ((int)strlen(proposition) != MM_TAILLE_CODE) {
             printf("Il faut exactement %d lettres.\n", MM_TAILLE_CODE);
-            essai--; continue;
+            essai--; continue; 
         }
+        
 
-        // Conversion en majuscule
+        // Uppercase
         for (i = 0; i < MM_TAILLE_CODE; ++i) {
             proposition[i] = toupper((unsigned char)proposition[i]);
         }
 
-        // Vérification des voyelles distinctes
-        int voyelles_presentes[5] = {0, 0, 0, 0, 0};
-        int valide = 1;
+        // Vérification alphabet + unicité
+        int voyelles_presentes[6] = {0,0,0,0,0,0}; // <-- 6
+        int input_ok = 1;
         for (i = 0; i < MM_TAILLE_CODE; ++i) {
             int trouve = 0;
-            for (int k = 0; k < 5; ++k) {
+            for (int k = 0; k < 6; ++k) {          // <-- 6
                 if (proposition[i] == voyelles[k]) {
                     if (voyelles_presentes[k]) {
-                        valide = 0; // répétition
-                        break;
+                        printf("Code invalide : lettres sans doublon.\n");
+                        input_ok = 0;
                     } else {
                         voyelles_presentes[k] = 1;
-                        trouve = 1;
-                        break;
                     }
+                    trouve = 1;
+                    break;
                 }
             }
-            if (!trouve || !valide) {
-                printf("Code invalide : 4 voyelles majuscules distinctes parmi {%s}\n", voyelles);
-                essai--; break;
+            if (!trouve) {
+                printf("Code invalide : utiliser uniquement {%s}.\n", voyelles);
+                input_ok = 0;
             }
         }
-        if (!valide) continue;
 
+        // si erreur, on redemande
+        if (!input_ok) { essai--; continue; } 
 
-        // Vérification si correct
+        // Gagné ?
         if (strcmp(proposition, secret) == 0) {
             printf("Bravo ! Code %s trouvé en %d essais.\n", secret, essai);
-            return essai; // score
+            return essai;
         }
 
-        // Calcul des bien/mal placées
+        // Calcul bien/mal placées
         int bien = 0, mal = 0;
-        int cSecret[5] = {0}, cProp[5] = {0};
+        int cSecret[6] = {0}, cProp[6] = {0};      
+
         for (i = 0; i < MM_TAILLE_CODE; ++i) {
             if (proposition[i] == secret[i]) {
                 bien++;
             } else {
-                // comptage pour mal placées
-                for (int k = 0; k < 5; ++k) {
-                    if (secret[i] == voyelles[k]) cSecret[k]++;
+                for (int k = 0; k < 6; ++k) {      
+                    if (secret[i] == voyelles[k])   cSecret[k]++;
                     if (proposition[i] == voyelles[k]) cProp[k]++;
                 }
             }
         }
-        for (int k = 0; k < 5; ++k) {
+        for (int k = 0; k < 6; ++k) {              
             mal += (cSecret[k] < cProp[k]) ? cSecret[k] : cProp[k];
         }
 
@@ -381,5 +392,5 @@ int jouer_mastermind(void) {
     }
 
     printf("Dommage ! Le code était : %s\n", secret);
-    return SCOREFINALE; // pénalité
+    return SCOREFINALE;
 }
