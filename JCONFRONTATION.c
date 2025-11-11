@@ -1,33 +1,53 @@
 /*
-===================================================
-SAE1.01 : 2025-2026
-
--Implémentation d'un besoin client
-- Jeu de Confrontation
-
-Lnaguage : C
 
 
-Auteur : 
--   Ahmet BASBUNAR
--   Ava (Nicolas) OURY
--   Léane SCHMITTAG
-===================================================
+lire_entier
+- valeur : entier lu
+- resultat : résultat de scanf
+
+
+lire_entier_borne
+- valeur : entier lu dans les bornes min..max
+- min : borne minimale
+- max : borne maximale
+
+calculer_moyenne
+- stats : type structure defini Stats
+- * stats : pointeur vers stats type structure Stats
+
+afficher_stats
+- nc : pointeur vers stats du jeu : nombre caché
+- suite : pointeur vers stats du jeu : suite mystère
+- mm : pointeur vers stats du jeu : mastermind
+
+jouer_nombre_cache
+- retourne le score (nombre d'essais ou pénalité)
+
+jouer_suite_mystere
+- retourne le score (nombre d'essais ou pénalité)
+
+jouer_mastermind
+- retourne le score (nombre d'essais ou pénalité)
+
+main
+- point d'entrée du programme
+
+
+
 */
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 #include <string.h>
 #include <ctype.h>
 
-
-/*
- * Constantes déclarées
-*/
-#define NC_VMIN        1
-#define NC_VMAX_MIN  500
+// ===== DEFINES =====
+#define NC_VMIN 1
+#define NC_VMAX_MIN 500
 #define NC_VMAX_MAX 1000
-#define NC_MAX_ESSAIS  10
+#define NC_MAX_ESSAIS 10
 
 #define SUITE_COEF_MIN 1
 #define SUITE_COEF_MAX 7
@@ -37,360 +57,290 @@ Auteur :
 #define MM_MAX_ESSAIS 10
 #define MM_VOYELLES "AEIOUY"
 
-#define SCOREFINALE 12
+#define SCORE_FINALE 12
 
-/* --------- Statistiques --------- */
+// ===== STRUCT STATS =====
 typedef struct {
     int parties;
     int total_points;
 } Stats;
 
-/*---------- Tout les fonctions nécessaires ---------*/
-// J1 : Nombre Caché
-int jouer_nombre_cache(void);     /* renvoie de points de la partie */
-// J2 : Suite Mystere
-int jouer_suite_mystere(void);    /* renvoie de points de la partie */
-// J3 : Mastermind
-int jouer_mastermind(void);       /* renvoie de points de la partie */
-// lire un entier simple (sans borne)
-static int lire_entier_simple(const char *invite);
-// lire un entier avec borne min..max
-static int lire_entier_borne(const char *invite, int min, int max);
-// calcule moyenne ou 12 si aucune partie jouée
-static double moyenne(const Stats *s);
-// affiche les moyennes des 3 jeux
-static void afficher_moyennes(const Stats *j1, const Stats *j2, const Stats *j3);
-// fonction principale
-int main();
-// mélangeur de voyelles
-void melangeur_voyelles(char *voyelles, int n);
+// ===== FONCTIONS UTILITAIRES =====
 
-
-
-
-
-/* Tant que ce n'est pas un entier, on affiche une erreur et on redemande. */
-static int lire_entier_simple(const char *invite) {
-    int x, ch;
-    for (;;) {
-        printf("%s", invite);
-        if (scanf("%d", &x) == 1) {
-            while ((ch = getchar()) != '\n' && ch != EOF) {} /* vider la ligne */
-            return x;
+// Lire un entier robuste
+int lire_entier(void) {
+    int valeur;
+    int resultat;
+    while (1) {
+        resultat = scanf("%d", &valeur);
+        if (resultat == 1) {
+            while (getchar() != '\n');
+            return valeur;
         } else {
-            printf("Erreur : entre un entier.\n");
-            while ((ch = getchar()) != '\n' && ch != EOF) {} /* vider la ligne */
+            while (getchar() != '\n');
+            printf("Entrée invalide. Veuillez entrer un entier : ");
         }
     }
 }
 
+// Lire un entier avec bornes
+int lire_entier_borne(int min, int max) {
+    int valeur;
+    while (1) {
+        valeur = lire_entier();
+        if (valeur >= min && valeur <= max) {
+            return valeur;
+        }
+        printf("Valeur hors limites [%d..%d]. Réessayez : ", min, max);
+    }
+}
 
-/* Lecture bornée min..max, basée sur la lecture simple. */
-static int lire_entier_borne(const char *invite, int min, int max) {
-    for (;;) {
-        int v = lire_entier_simple(invite);
-        if (v < min || v > max) {
-            printf("Hors bornes (%d..%d). Réessaie.\n", min, max);
+// Calculer moyenne
+double calculer_moyenne(Stats *stats) {
+    if (stats->parties == 0) {
+        return SCORE_FINALE;
+    }
+    return (double)stats->total_points / stats->parties;
+}
+
+// Afficher les statistiques
+void afficher_stats(Stats *nc, Stats *suite, Stats *mm) {
+    double moy_nc = calculer_moyenne(nc);
+    double moy_suite = calculer_moyenne(suite);
+    double moy_mm = calculer_moyenne(mm);
+    double score_global = (moy_nc + moy_suite + moy_mm) / 3.0;
+
+    printf("\n===== MOYENNES =====\n");
+    printf("Nombre caché     : %.2f\n", moy_nc);
+    printf("Suite mystère    : %.2f\n", moy_suite);
+    printf("Mastermind       : %.2f\n", moy_mm);
+    printf("Score global     : %.2f\n", score_global);
+    printf("====================\n\n");
+}
+
+// ===== JEU 1 : NOMBRE CACHÉ =====
+
+int jouer_nombre_cache(void) {
+    int vmax = NC_VMAX_MIN + rand() % (NC_VMAX_MAX - NC_VMAX_MIN + 1);
+    int nombre = NC_VMIN + rand() % vmax;
+    int essais = 0;
+    int proposition;
+
+    printf("\n*** JEU 1 : NOMBRE CACHÉ ***\n");
+    printf("Nombre à trouver entre 1 et %d. Vous avez %d essais.\n\n", vmax, NC_MAX_ESSAIS);
+
+    while (essais < NC_MAX_ESSAIS) {
+        essais++;
+        printf("Essai %d/%d : Entrez votre nombre : ", essais, NC_MAX_ESSAIS);
+        proposition = lire_entier_borne(NC_VMIN, vmax);
+
+        if (proposition == nombre) {
+            printf("Bravo ! Vous avez trouvé %d en %d essai(s).\n", nombre, essais);
+            return essais;
+        } else if (proposition < nombre) {
+            printf("C'est plus !\n");
+        } else {
+            printf("C'est moins !\n");
+        }
+    }
+
+    printf("Dommage ! Le nombre était %d. Pénalité : %d points.\n", nombre, SCORE_FINALE);
+    return SCORE_FINALE;
+}
+
+// ===== JEU 2 : SUITE MYSTÈRE =====
+
+int jouer_suite_mystere(void) {
+    int a = SUITE_COEF_MIN + rand() % (SUITE_COEF_MAX - SUITE_COEF_MIN + 1);
+    int b = SUITE_COEF_MIN + rand() % (SUITE_COEF_MAX - SUITE_COEF_MIN + 1);
+    int c = SUITE_COEF_MIN + rand() % (SUITE_COEF_MAX - SUITE_COEF_MIN + 1);
+
+    int u0 = c;
+    int u1 = a * u0 + b;
+    int u2 = a * u1 + b;
+    int u3_correct = a * u2 + b;
+
+    printf("\n*** JEU 2 : SUITE MYSTÈRE ***\n");
+    printf("Vous avez %d essai(s) pour trouver U3.\n\n", SUITE_MAX_ESSAIS);
+    printf("Suite : U0 = %d, U1 = %d, U2 = %d\n", u0, u1, u2);
+    printf("Trouvez U3 : ");
+
+    for (int essai = 1; essai <= SUITE_MAX_ESSAIS; essai++) {
+        int proposition = lire_entier();
+
+        if (proposition == u3_correct) {
+            printf("Bravo ! U3 = %d trouvé en %d essai(s).\n", u3_correct, essai);
+            return essai;
+        } else if (essai < SUITE_MAX_ESSAIS) {
+            if (proposition < u3_correct) {
+                printf("C'est plus ! Réessayez : ");
+            } else {
+                printf("C'est moins ! Réessayez : ");
+            }
+        }
+    }
+
+    printf("Dommage ! U3 = %d. Pénalité : %d points.\n", u3_correct, SCORE_FINALE);
+    return SCORE_FINALE;
+}
+
+// ===== JEU 3 : MASTERMIND =====
+
+int jouer_mastermind(void) {
+    char voyelles[] = MM_VOYELLES;
+    char code[MM_TAILLE_CODE + 1];
+    int code_len = strlen(voyelles);
+
+    // Générer 4 voyelles distinctes
+    code[0] = voyelles[rand() % code_len];
+    int ok;
+    for (int i = 1; i < MM_TAILLE_CODE; i++) {
+        do {
+            code[i] = voyelles[rand() % code_len];
+            ok = 1;
+            for (int j = 0; j < i; j++) {
+                if (code[i] == code[j]) {
+                    ok = 0;
+                    break;
+                }
+            }
+        } while (!ok);
+    }
+    code[MM_TAILLE_CODE] = '\0';
+
+    printf("\n*** JEU 3 : MASTERMIND ***\n");
+    printf("Trouvez le code de 4 voyelles distinctes (A,E,I,O,U,Y).\n");
+    printf("Vous avez %d essais.\n\n", MM_MAX_ESSAIS);
+
+    for (int essai = 1; essai <= MM_MAX_ESSAIS; essai++) {
+        printf("Essai %d/%d : Entrez 4 voyelles majuscules : ", essai, MM_MAX_ESSAIS);
+        
+        char proposition[MM_TAILLE_CODE + 1];
+        scanf("%4s", proposition);
+        while (getchar() != '\n');
+
+        // Valider entrée
+        int valide = 1;
+        if (strlen(proposition) != MM_TAILLE_CODE) {
+            valide = 0;
+        }
+        if (valide) {
+            for (int i = 0; i < MM_TAILLE_CODE; i++) {
+                proposition[i] = toupper(proposition[i]);
+                if (strchr(MM_VOYELLES, proposition[i]) == NULL) {
+                    valide = 0;
+                    break;
+                }
+            }
+        }
+        if (!valide) {
+            printf("Entrée invalide. Réessayez.\n");
+            essai--;
             continue;
         }
-        return v;
-    }
-}
 
-static double moyenne(const Stats *s) {
-    if (!s || s->parties == 0) return 12.0;
-    return (double)s->total_points / (double)s->parties;
-}
+        // Vérifier doublons
+        int doublon = 0;
+        for (int i = 0; i < MM_TAILLE_CODE; i++) {
+            for (int j = i + 1; j < MM_TAILLE_CODE; j++) {
+                if (proposition[i] == proposition[j]) {
+                    doublon = 1;
+                    break;
+                }
+            }
+            if (doublon) break;
+        }
+        if (doublon) {
+            printf("Les voyelles doivent être distinctes. Réessayez.\n");
+            essai--;
+            continue;
+        }
 
-static void afficher_moyennes(const Stats *j1, const Stats *j2, const Stats *j3) {
-    double m1 = moyenne(j1);
-    double m2 = moyenne(j2);
-    double m3 = moyenne(j3);
-    double global = (m1 + m2 + m3) / 3.0;
+        // Vérifier et compter
+        int bien_places = 0;
+        int mal_places = 0;
 
-    printf("\n===== Moyennes =====\n");
-    printf("Nombre caché  : %.2f\n", m1);
-    printf("Suite mystère : %.2f\n", m2);
-    printf("Mastermind    : %.2f\n", m3);
-    printf("Score global  : %.2f\n", global);
-}
+        for (int i = 0; i < MM_TAILLE_CODE; i++) {
+            if (proposition[i] == code[i]) {
+                bien_places++;
+            } else if (strchr(code, proposition[i]) != NULL) {
+                mal_places++;
+            }
+        }
 
+        if (bien_places == MM_TAILLE_CODE) {
+            printf("Bravo ! Code trouvé en %d essai(s).\n", essai);
+            return essai;
+        }
 
-/*melangeur de voyelles*/
-// methode de Fisher-Yates
-void generer_code_voyelles(char *code) {
-    const int n = 6; // nombre de voyelles possibles
-    char voyelles_table[5];
-
-    // Copier les voyelles possibles dans un tableau
-    for (int i = 0; i < n; i++) {
-        voyelles_table[i] = MM_VOYELLES[i];
-    }
-
-    // Mélanger la liste avec Fisher-Yates
-    for (int i = n - 1; i > 0; i--) {
-        int j = rand() % (i + 1);
-        char temp = voyelles_table[i];
-        voyelles_table[i] = voyelles_table[j];
-        voyelles_table[j] = temp;
+        printf("Bien placées : %d, Mal placées : %d\n", bien_places, mal_places);
     }
 
-    // Prendre les premières MM_TAILLE_CODE voyelles
-    for (int i = 0; i < MM_TAILLE_CODE; i++) {
-        code[i] = voyelles_table[i];
-    }
-    code[MM_TAILLE_CODE] = '\0'; // Terminaison de la chaîne
+    printf("Dommage ! Le code était %s. Pénalité : %d points.\n", code, SCORE_FINALE);
+    return SCORE_FINALE;
 }
 
+/* ===== MAIN ===== */
 
-
-/* 
-    * Fonction principale
-*/
 int main(void) {
     srand((unsigned)time(NULL));
 
-    Stats S_nb = {0,0};  // Nombre caché
-    Stats S_sm = {0,0};  // Suite mystère
-    Stats S_mm = {0,0};  // Mastermind
+    Stats stat_nc = {0, 0};
+    Stats stat_suite = {0, 0};
+    Stats stat_mm = {0, 0};
 
-    int choix = -1;
+    int choix;
+    int score;
 
-    while (choix != 0) {
-        printf("\n=== MENU ===\n");
+    printf("===== JEUX DE CONFRONTATION =====\n\n");
+
+    while (1) {
+        printf("Menu principal :\n");
         printf("1 - Nombre caché\n");
         printf("2 - Suite mystère\n");
         printf("3 - Mastermind\n");
         printf("4 - Afficher les moyennes\n");
         printf("0 - Quitter\n");
+        printf("Votre choix : ");
 
-        choix = lire_entier_borne("Votre choix : ", 0, 4);
+        choix = lire_entier();
 
-        int points = 0;
-        if (choix == 1) {
-            points = jouer_nombre_cache();
-            S_nb.parties++;
-            S_nb.total_points += points;
-            afficher_moyennes(&S_nb, &S_sm, &S_mm);
-        }
-        else if (choix == 2) {
-            points = jouer_suite_mystere();
-            S_sm.parties++;
-            S_sm.total_points += points;
-            afficher_moyennes(&S_nb, &S_sm, &S_mm);
-        }
-        else if (choix == 3) {
-            points = jouer_mastermind();
-            S_mm.parties++;
-            S_mm.total_points += points;
-            afficher_moyennes(&S_nb, &S_sm, &S_mm);
-        }
-        else if (choix == 4) {
-            afficher_moyennes(&S_nb, &S_sm, &S_mm);
+        switch (choix) {
+            case 1:
+                score = jouer_nombre_cache();
+                stat_nc.parties++;
+                stat_nc.total_points += score;
+                afficher_stats(&stat_nc, &stat_suite, &stat_mm);
+                break;
+
+            case 2:
+                score = jouer_suite_mystere();
+                stat_suite.parties++;
+                stat_suite.total_points += score;
+                afficher_stats(&stat_nc, &stat_suite, &stat_mm);
+                break;
+
+            case 3:
+                score = jouer_mastermind();
+                stat_mm.parties++;
+                stat_mm.total_points += score;
+                afficher_stats(&stat_nc, &stat_suite, &stat_mm);
+                break;
+
+            case 4:
+                afficher_stats(&stat_nc, &stat_suite, &stat_mm);
+                break;
+
+            case 0:
+                printf("\nStatistiques finales :\n");
+                afficher_stats(&stat_nc, &stat_suite, &stat_mm);
+                printf("Au revoir !\n");
+                return 0;
+
+            default:
+                printf("Choix invalide. Réessayez.\n\n");
         }
     }
 
-    printf("Au revoir !\n");
     return 0;
-}
-
-/*
- ========================================================================
- ==========================>>>> JEU 1,2,3 <<<<<==========================
- ========================================================================
-*/
-
-/* ================== Implémentation JEU 1 ================== */
-/* Jeu Nombre Caché */
-int jouer_nombre_cache(void) {
-    // 1. Générer VMAX aléatoirement dans [500..1000] 
-    int VMAX = (rand() % (NC_VMAX_MAX - NC_VMAX_MIN + 1)) + NC_VMAX_MIN;
-    
-    // 2. Générer le nombre secret N dans [1..VMAX]
-    int secret = (rand() % (VMAX - NC_VMIN + 1)) + NC_VMIN;
-    
-    int essai_user;
-
-    printf("======================================\n");
-    printf("\n--- Bienvenue au Nombre Caché ! ---\n");
-    printf("J'ai choisi un nombre entre %d et %d.\n", NC_VMIN, VMAX);
-    printf("Vous avez %d essais pour le trouver.\n", NC_MAX_ESSAIS);
-
-    // 3. Boucle des essais
-    for (int essai = 1; essai <= NC_MAX_ESSAIS; essai++) {
-
-        /* Afficher l'invite simplement puis lire */
-        printf("Essai %d/%d : ", essai, NC_MAX_ESSAIS);
-        essai_user = lire_entier_borne("", NC_VMIN, VMAX);
-
-        if (essai_user == secret) {
-            printf("\nBravo ! Vous avez trouvé en %d essai(s) !\n", essai);
-            return essai; // Le score est le nombre d'essais
-        }
-        else if (essai_user < secret) {
-            printf("C'est plus !\n");
-        }
-        else {
-            printf("C'est moins !\n");
-        }
-    }
-
-    // 5. On sort de la boucle, le joueur a perdu
-    printf("\nDommage ! Vous avez épuisé vos %d essais.\n", NC_MAX_ESSAIS);
-    printf("Le nombre secret était : %d\n", secret);
-    
-    return SCOREFINALE; // Score de pénalité
-}
-
-
-/* ================== Implémentation JEU 2 ================== */
-/* Jeu Suite Mystère */
-/*===================*/
-int jouer_suite_mystere(void) {
-    // a, b, c ∈ [1..7]
-    int a = (rand() % (SUITE_COEF_MAX - SUITE_COEF_MIN + 1)) + SUITE_COEF_MIN;
-    int b = (rand() % (SUITE_COEF_MAX - SUITE_COEF_MIN + 1)) + SUITE_COEF_MIN;
-    int c = (rand() % (SUITE_COEF_MAX - SUITE_COEF_MIN + 1)) + SUITE_COEF_MIN;
-
-    // U0=c ; U1=a*U0+b ; U2=a*U1+b ; U3=a*U2+b
-    int U0 = c;
-    int U1 = a * U0 + b;
-    int U2 = a * U1 + b;
-    int U3 = a * U2 + b;   // valeur à deviner
-
-    printf("\n--- Suite mystère ---\n");
-    printf("La suite est définie par: U0 = c, et U(n) = a*U(n-1) + b\n");
-    printf("Avec a=%d, b=%d, c=%d\n", a, b, c);
-    printf("Voici les trois premiers termes: %d, %d, %d\n", U0, U1, U2);
-    printf("Trouve U3 ! (tu as %d essai(s))\n", SUITE_MAX_ESSAIS);
-
-    for (int essai = 1; essai <= SUITE_MAX_ESSAIS; ++essai) {
-        printf("Essai %d/%d : ", essai, SUITE_MAX_ESSAIS);
-        int prop = lire_entier_simple("");
-
-        if (prop == U3) {
-            printf("Bravo ! U3 = %d. Trouvé en %d essai(s).\n", U3, essai);
-            return essai; // score = nb d’essais utilisés
-        } else if (prop < U3) {
-            printf("C’est plus !\n");
-        } else {
-            printf("C’est moins !\n");
-        }
-    }
-
-    printf("Raté ! La bonne réponse était U3 = %d.\n", U3);
-    return SCOREFINALE; // pénalité
-}
-
-
-
-
-/* ================== Implémentation JEU 3 ================== */
-/* Jeu Mastermind (voyelles distinctes) */
-/*======================================*/
-
-int jouer_mastermind(void) {
-    const char *voyelles = MM_VOYELLES; // "AEIOUY"
-    char secret[MM_TAILLE_CODE + 1];
-    int i;
-
-    // Générer un code de 4 voyelles distinctes parmi 6
-    int util[6] = {0,0,0,0,0,0};    
-    for (i = 0; i < MM_TAILLE_CODE; ++i) {
-        int idx;
-        do {
-            idx = rand() % 6;       
-        } while (util[idx]);
-        util[idx] = 1;
-        secret[i] = voyelles[idx];
-    }
-    secret[MM_TAILLE_CODE] = '\0';
-
-    printf("\n--- Mastermind ---\n");
-    printf("Devine un code de %d voyelles parmi {%s}\n", MM_TAILLE_CODE, voyelles);
-    printf("Tu as %d essais.\n", MM_MAX_ESSAIS);
-    printf("Les voyelles ne se répètent pas.\n");
-
-
-
-    //test
-    printf("[DEBUG] Code secret : %s\n", secret);
-
-
-
-
-
-    for (int essai = 1; essai <= MM_MAX_ESSAIS; ++essai) {
-        char proposition[64];
-        printf("Essai %d/%d : ", essai, MM_MAX_ESSAIS);
-        scanf("%63s", proposition);
-        int ch; while ((ch = getchar()) != '\n' && ch != EOF) {}
-
-        // Vérification de la longueur du saisie utilisateur
-        if ((int)strlen(proposition) != MM_TAILLE_CODE) {
-            printf("Il faut exactement %d lettres.\n", MM_TAILLE_CODE);
-            essai--; continue; 
-        }
-        
-
-        // Uppercase
-        for (i = 0; i < MM_TAILLE_CODE; ++i) {
-            proposition[i] = toupper((unsigned char)proposition[i]);
-        }
-
-        // Vérification alphabet + unicité
-        int voyelles_presentes[6] = {0,0,0,0,0,0}; // <-- 6
-        int input_ok = 1;
-        for (i = 0; i < MM_TAILLE_CODE; ++i) {
-            int trouve = 0;
-            for (int k = 0; k < 6; ++k) {          // <-- 6
-                if (proposition[i] == voyelles[k]) {
-                    if (voyelles_presentes[k]) {
-                        printf("Code invalide : lettres sans doublon.\n");
-                        input_ok = 0;
-                    } else {
-                        voyelles_presentes[k] = 1;
-                    }
-                    trouve = 1;
-                    break;
-                }
-            }
-            if (!trouve) {
-                printf("Code invalide : utiliser uniquement {%s}.\n", voyelles);
-                input_ok = 0;
-            }
-        }
-
-        // si erreur, on redemande
-        if (!input_ok) { essai--; continue; } 
-
-        // Gagné ?
-        if (strcmp(proposition, secret) == 0) {
-            printf("Bravo ! Code %s trouvé en %d essais.\n", secret, essai);
-            return essai;
-        }
-
-        // Calcul bien/mal placées
-        int bien = 0, mal = 0;
-        int cSecret[6] = {0}, cProp[6] = {0};      
-
-        for (i = 0; i < MM_TAILLE_CODE; ++i) {
-            if (proposition[i] == secret[i]) {
-                bien++;
-            } else {
-                for (int k = 0; k < 6; ++k) {      
-                    if (secret[i] == voyelles[k])   cSecret[k]++;
-                    if (proposition[i] == voyelles[k]) cProp[k]++;
-                }
-            }
-        }
-        for (int k = 0; k < 6; ++k) {              
-            mal += (cSecret[k] < cProp[k]) ? cSecret[k] : cProp[k];
-        }
-
-        printf("Bien placées: %d, Mal placées: %d\n", bien, mal);
-    }
-
-    printf("Dommage ! Le code était : %s\n", secret);
-    return SCOREFINALE;
 }
