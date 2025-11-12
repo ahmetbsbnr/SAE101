@@ -67,21 +67,49 @@ typedef struct {
 
 // ===== FONCTIONS UTILITAIRES =====
 
-// Lire un entier robuste
+
+
+
+
+
+
+
+
+
+
+// Lire un entier 
 int lire_entier(void) {
     int valeur;
     int resultat;
+    char c;
+    
     while (1) {
         resultat = scanf("%d", &valeur);
         if (resultat == 1) {
-            while (getchar() != '\n');
-            return valeur;
+            // Vérifier qu'il n'y a rien après le nombre
+            c = getchar();
+            if (c == '\n') {
+                return valeur;
+            } else {
+                // Il y a des caractères supplémentaires après le nombre
+                while (c != '\n' && c != EOF) {
+                    c = getchar();
+                }
+                printf("Entrée invalide. Veuillez entrer un entier : ");
+            }
         } else {
-            while (getchar() != '\n');
+            // scanf a échoué
+            while ((c = getchar()) != '\n' && c != EOF);
             printf("Entrée invalide. Veuillez entrer un entier : ");
         }
     }
 }
+
+
+
+
+
+
 
 // Lire un entier avec bornes
 int lire_entier_borne(int min, int max) {
@@ -120,33 +148,46 @@ void afficher_stats(Stats *nc, Stats *suite, Stats *mm) {
 
 // ===== JEU 1 : NOMBRE CACHÉ =====
 
+
+
+
+
+
+
 int jouer_nombre_cache(void) {
-    int vmax = NC_VMAX_MIN + rand() % (NC_VMAX_MAX - NC_VMAX_MIN + 1);
-    int nombre = NC_VMIN + rand() % vmax;
-    int essais = 0;
-    int proposition;
+    int vmax = NC_VMAX_MIN + rand() % (NC_VMAX_MAX - NC_VMAX_MIN + 1);      // Valeur max aléatoire
+    int nombre = NC_VMIN + rand() % vmax;                             // Nombre à deviner
+    int essais = 0;                                                 // Compteur d'essais
+    int proposition;                                       // Proposition du joueur
 
     printf("\n*** JEU 1 : NOMBRE CACHÉ ***\n");
-    printf("Nombre à trouver entre 1 et %d. Vous avez %d essais.\n\n", vmax, NC_MAX_ESSAIS);
+    printf("Nombre à trouver entre 1 et %d. Vous avez %d essais.\n\n", vmax, NC_MAX_ESSAIS);   // affichage :  borne max et nb essais
 
-    while (essais < NC_MAX_ESSAIS) {
-        essais++;
-        printf("Essai %d/%d : Entrez votre nombre : ", essais, NC_MAX_ESSAIS);
+    while (essais < NC_MAX_ESSAIS) {                    // boucle tant que nb essais n'est pas atteint        
+        essais++;                                      // On incrémenter le compteur d'essais
+        printf("Essai %d/%d : Entrez votre nombre : ", essais, NC_MAX_ESSAIS);  // on demande et lit la proposition
         proposition = lire_entier_borne(NC_VMIN, vmax);
 
-        if (proposition == nombre) {
-            printf("Bravo ! Vous avez trouvé %d en %d essai(s).\n", nombre, essais);
+        if (proposition == nombre) {                     // Si la proposition est correcte
+            printf("Bravo ! Vous avez trouvé %d en %d essai(s).\n", nombre, essais);    // message + retour du nb d'essais
             return essais;
-        } else if (proposition < nombre) {
-            printf("C'est plus !\n");
-        } else {
-            printf("C'est moins !\n");
+        } else if (proposition < nombre) {               // Si trop petit
+            printf("C'est plus !\n");                     // message
+        } else {                                        // Si trop grand
+            printf("C'est moins !\n");                    // message
         }
     }
 
     printf("Dommage ! Le nombre était %d. Pénalité : %d points.\n", nombre, SCORE_FINALE);
     return SCORE_FINALE;
 }
+
+
+
+
+
+
+
 
 // ===== JEU 2 : SUITE MYSTÈRE =====
 
@@ -162,6 +203,20 @@ int jouer_suite_mystere(void) {
 
     printf("\n*** JEU 2 : SUITE MYSTÈRE ***\n");
     printf("Vous avez %d essai(s) pour trouver U3.\n\n", SUITE_MAX_ESSAIS);
+
+
+
+
+
+
+
+    printf("[DEBUG] U3 = %d\n", u3_correct); // Ligne DEBUG
+
+
+
+
+
+
     printf("Suite : U0 = %d, U1 = %d, U2 = %d\n", u0, u1, u2);
     printf("Trouvez U3 : ");
 
@@ -177,6 +232,8 @@ int jouer_suite_mystere(void) {
             } else {
                 printf("C'est moins ! Réessayez : ");
             }
+        } else {
+            printf("\n");
         }
     }
 
@@ -234,7 +291,7 @@ int jouer_mastermind(void) {
             }
         }
         if (!valide) {
-            printf("Entrée invalide. Réessayez.\n");
+            printf("Entrée invalide. Veuillez entrer 4 voyelles majuscules distinctes.\n");
             essai--;
             continue;
         }
