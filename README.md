@@ -5,8 +5,6 @@ Projet de SAE1.01 en langage C.
 ## Auteurs
 
 - Ahmet BASBUNAR
-- Ava (Nicolas) OURY
-- Léane SCHMITTAG
 
 ## Description
 
